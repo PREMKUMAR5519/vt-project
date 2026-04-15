@@ -1,0 +1,52 @@
+.btn {
+  @include button-base;
+
+  &--primary {
+    @include button-primary;
+  }
+
+  &--ghost {
+    @include button-ghost;
+  }
+
+  &--danger {
+    @include button-base;
+    background: rgba($danger, 0.15);
+    color: $danger;
+    border: 1px solid rgba($danger, 0.3);
+    &:hover:not(:disabled) {
+      background: rgba($danger, 0.25);
+    }
+  }
+
+  &--success {
+    @include button-base;
+    background: rgba($success, 0.15);
+    color: $success;
+    border: 1px solid rgba($success, 0.3);
+    &:hover:not(:disabled) {
+      background: rgba($success, 0.25);
+    }
+  }
+
+  &--sm {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-xs;
+  }
+
+  &--md {
+    padding: $spacing-sm $spacing-lg;
+    font-size: $font-size-sm;
+  }
+
+  &--lg {
+    padding: $spacing-md $spacing-xl;
+    font-size: $font-size-base;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    font-size: 1.1em;
+  }
+}

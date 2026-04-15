@@ -1,0 +1,47 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  @include glass-card;
+  background: $bg-secondary;
+  width: 90%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-lg;
+    border-bottom: 1px solid $border-color;
+
+    h3 {
+      font-size: $font-size-lg;
+      font-weight: 600;
+    }
+  }
+
+  &__close {
+    @include button-ghost;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: $radius-full;
+    font-size: $font-size-lg;
+  }
+
+  &__body {
+    padding: $spacing-lg;
+  }
+}

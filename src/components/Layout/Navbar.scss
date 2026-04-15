@@ -1,0 +1,90 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba($bg-primary, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid $border-color;
+
+  &__inner {
+    max-width: $bp-xl;
+    margin: 0 auto;
+    padding: 0 $spacing-lg;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-xl;
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    text-decoration: none;
+    color: $text-primary;
+
+    &-icon {
+      font-size: 1.5rem;
+    }
+
+    &-text {
+      font-size: $font-size-lg;
+      font-weight: 700;
+      background: $accent-gradient;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  }
+
+  &__links {
+    display: flex;
+    gap: $spacing-lg;
+
+    a {
+      color: $text-secondary;
+      font-size: $font-size-sm;
+      font-weight: 500;
+      padding: $spacing-xs $spacing-sm;
+      border-radius: $radius-md;
+      transition: all $transition-fast;
+
+      &:hover,
+      &.active {
+        color: $text-primary;
+        background: $bg-glass;
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+  }
+
+  &__user {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+
+  &__username {
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: $text-secondary;
+    @include truncate;
+    max-width: 120px;
+  }
+
+  &__auth {
+    display: flex;
+    gap: $spacing-sm;
+  }
+}
+
+@media (max-width: $bp-md) {
+  .navbar {
+    &__links { display: none; }
+    &__username { display: none; }
+  }
+}

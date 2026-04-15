@@ -1,0 +1,169 @@
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: $bg-primary;
+
+  &__messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: $spacing-md $spacing-lg;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+    @include scrollbar;
+  }
+
+  &__msg {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+
+    &--mine {
+      justify-content: flex-end;
+
+      .chat-panel__msg-bubble {
+        background: $accent-gradient;
+        color: white;
+        border-radius: $radius-xl $radius-xl $radius-sm $radius-xl;
+      }
+
+      .chat-panel__msg-time {
+        color: rgba(255, 255, 255, 0.6);
+      }
+    }
+
+    &--theirs {
+      justify-content: flex-start;
+
+      .chat-panel__msg-bubble {
+        background: $bg-tertiary;
+        border-radius: $radius-xl $radius-xl $radius-xl $radius-sm;
+      }
+    }
+  }
+
+  &__msg-bubble {
+    max-width: 70%;
+    padding: $spacing-sm $spacing-md;
+    word-wrap: break-word;
+
+    p {
+      font-size: $font-size-sm;
+      line-height: 1.5;
+    }
+  }
+
+  &__msg-time {
+    display: block;
+    font-size: $font-size-xs;
+    color: $text-muted;
+    margin-top: 2px;
+    text-align: right;
+  }
+
+  // Typing indicator
+  &__typing {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: $spacing-sm $spacing-md !important;
+  }
+
+  &__typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: $text-muted;
+    animation: typingBounce 1.4s ease-in-out infinite;
+
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.4s; }
+  }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+  }
+
+  // Emoji picker
+  &__emoji-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: $spacing-sm $spacing-md;
+    border-top: 1px solid $border-color;
+    background: $bg-secondary;
+    animation: fadeIn 0.2s ease;
+  }
+
+  &__emoji-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: $radius-sm;
+    transition: background $transition-fast;
+
+    &:hover {
+      background: $bg-glass-hover;
+    }
+  }
+
+  // Input bar
+  &__input-bar {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-sm $spacing-md;
+    border-top: 1px solid $border-color;
+    background: $bg-secondary;
+  }
+
+  &__emoji-toggle {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: $spacing-xs;
+    border-radius: $radius-md;
+    transition: background $transition-fast;
+
+    &:hover {
+      background: $bg-glass;
+    }
+  }
+
+  &__input {
+    flex: 1;
+    border: none;
+    background: $bg-glass;
+    border-radius: $radius-full;
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-sm;
+
+    &:focus {
+      box-shadow: none;
+      background: $bg-glass-hover;
+    }
+  }
+
+  &__send-btn {
+    @include button-primary;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: $radius-full;
+    flex-shrink: 0;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      box-shadow: none;
+    }
+  }
+}

@@ -1,0 +1,49 @@
+.avatar {
+  position: relative;
+  border-radius: $radius-full;
+  overflow: visible;
+
+  img {
+    border-radius: $radius-full;
+    object-fit: cover;
+  }
+
+  &--sm {
+    width: 32px;
+    height: 32px;
+    img { width: 32px; height: 32px; }
+  }
+
+  &--md {
+    width: 40px;
+    height: 40px;
+    img { width: 40px; height: 40px; }
+  }
+
+  &--lg {
+    width: 56px;
+    height: 56px;
+    img { width: 56px; height: 56px; }
+  }
+
+  &--xl {
+    width: 80px;
+    height: 80px;
+    img { width: 80px; height: 80px; }
+  }
+
+  &__status {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 10px;
+    height: 10px;
+    border-radius: $radius-full;
+    background: $text-muted;
+    border: 2px solid $bg-primary;
+
+    &--online {
+      background: $success;
+    }
+  }
+}

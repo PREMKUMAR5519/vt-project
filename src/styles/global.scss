@@ -1,0 +1,113 @@
+@use 'sass:color';
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: $font-family;
+  background: $bg-primary;
+  color: $text-primary;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: $accent-secondary;
+  text-decoration: none;
+  transition: color $transition-fast;
+  &:hover { color: color.adjust($accent-secondary, $lightness: 10%); }
+}
+
+button {
+  font-family: $font-family;
+}
+
+input, textarea, select {
+  font-family: $font-family;
+  background: $bg-glass;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
+  color: $text-primary;
+  font-size: $font-size-base;
+  outline: none;
+  transition: border-color $transition-fast;
+
+  &:focus {
+    border-color: $accent-primary;
+    box-shadow: 0 0 0 3px rgba($accent-primary, 0.15);
+  }
+
+  &::placeholder {
+    color: $text-muted;
+  }
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+// Utility classes
+.container {
+  width: 100%;
+  max-width: $bp-xl;
+  margin: 0 auto;
+  padding: 0 $spacing-lg;
+}
+
+// Animations
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba($accent-primary, 0.3); }
+  50% { box-shadow: 0 0 40px rgba($accent-primary, 0.6); }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease forwards;
+}

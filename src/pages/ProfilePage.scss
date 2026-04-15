@@ -1,0 +1,200 @@
+.profile-page {
+  min-height: calc(100vh - 64px);
+  padding: $spacing-xl;
+
+  &__content {
+    max-width: 700px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-lg;
+    animation: slideUp 0.5s ease;
+  }
+
+  &__card {
+    @include glass-card;
+    padding: $spacing-xl;
+  }
+
+  &__avatar-section {
+    display: flex;
+    align-items: center;
+    gap: $spacing-lg;
+  }
+
+  &__user-info {
+    h2 {
+      font-size: $font-size-2xl;
+      font-weight: 700;
+    }
+  }
+
+  &__email {
+    color: $text-secondary;
+    font-size: $font-size-sm;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__badge {
+    display: inline-block;
+    padding: 2px 10px;
+    background: rgba($warning, 0.15);
+    color: $warning;
+    border-radius: $radius-full;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    margin-bottom: $spacing-sm;
+  }
+
+  // Tabs
+  &__tabs {
+    display: flex;
+    gap: 2px;
+    background: $bg-glass;
+    border-radius: $radius-lg;
+    padding: 3px;
+  }
+
+  &__tab {
+    flex: 1;
+    padding: $spacing-sm $spacing-md;
+    background: none;
+    border: none;
+    border-radius: $radius-md;
+    color: $text-muted;
+    font-size: $font-size-sm;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all $transition-fast;
+    font-family: $font-family;
+
+    &:hover {
+      color: $text-secondary;
+    }
+
+    &--active {
+      background: $bg-tertiary;
+      color: $text-primary;
+    }
+  }
+
+  &__tab-content {
+    @include glass-card;
+    padding: $spacing-xl;
+  }
+
+  // Interests
+  &__interests {
+    h3 {
+      font-size: $font-size-lg;
+      font-weight: 600;
+      margin-bottom: $spacing-xs;
+    }
+
+    > p {
+      color: $text-secondary;
+      font-size: $font-size-sm;
+      margin-bottom: $spacing-lg;
+    }
+
+    .btn {
+      margin-top: $spacing-lg;
+    }
+  }
+
+  &__interests-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+  }
+
+  &__interest-tag {
+    @include button-ghost;
+    padding: $spacing-xs $spacing-md;
+    border-radius: $radius-full;
+    font-size: $font-size-sm;
+
+    &--active {
+      background: rgba($accent-primary, 0.2);
+      border-color: $accent-primary;
+      color: $accent-secondary;
+    }
+  }
+
+  // Lists
+  &__empty {
+    text-align: center;
+    color: $text-muted;
+    padding: $spacing-2xl;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+
+  &__list-item {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius-lg;
+    background: $bg-glass;
+    transition: background $transition-fast;
+
+    &:hover {
+      background: $bg-glass-hover;
+    }
+  }
+
+  &__list-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__list-name {
+    font-weight: 500;
+    font-size: $font-size-sm;
+  }
+
+  &__list-sub {
+    font-size: $font-size-xs;
+    color: $text-muted;
+  }
+
+  &__list-actions {
+    display: flex;
+    gap: $spacing-xs;
+  }
+
+  // Edit modal
+  &__edit {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+
+    label {
+      font-size: $font-size-sm;
+      color: $text-secondary;
+    }
+
+    input {
+      width: 100%;
+    }
+  }
+}
+
+@media (max-width: $bp-md) {
+  .profile-page {
+    &__avatar-section {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    &__tabs {
+      flex-wrap: wrap;
+    }
+  }
+}

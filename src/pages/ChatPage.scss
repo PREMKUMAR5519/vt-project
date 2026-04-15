@@ -1,0 +1,135 @@
+.chat-page {
+  height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-sm $spacing-lg;
+    border-bottom: 1px solid $border-color;
+    background: rgba($bg-secondary, 0.8);
+    backdrop-filter: blur(12px);
+  }
+
+  &__partner {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+
+  &__partner-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__partner-name {
+    font-weight: 600;
+    font-size: $font-size-sm;
+  }
+
+  &__partner-status {
+    font-size: $font-size-xs;
+    color: $success;
+  }
+
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+
+  &__room-id {
+    font-size: $font-size-xs;
+    color: $text-muted;
+    font-family: monospace;
+    background: $bg-glass;
+    padding: 2px 8px;
+    border-radius: $radius-sm;
+  }
+
+  &__body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    overflow: hidden;
+
+    &--full {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__chat {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__sidebar {
+    border-left: 1px solid $border-color;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: $bg-secondary;
+    animation: fadeIn 0.3s ease;
+  }
+
+  &__tabs {
+    display: flex;
+    border-bottom: 1px solid $border-color;
+  }
+
+  &__tab {
+    flex: 1;
+    padding: $spacing-sm;
+    background: none;
+    border: none;
+    color: $text-muted;
+    font-size: $font-size-sm;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-xs;
+    transition: all $transition-fast;
+    border-bottom: 2px solid transparent;
+    font-family: $font-family;
+
+    &:hover {
+      color: $text-secondary;
+      background: $bg-glass;
+    }
+
+    &--active {
+      color: $accent-secondary;
+      border-bottom-color: $accent-primary;
+    }
+  }
+
+  &__tab-content {
+    flex: 1;
+    overflow-y: auto;
+    @include scrollbar;
+  }
+}
+
+@media (max-width: $bp-lg) {
+  .chat-page {
+    &__body {
+      grid-template-columns: 1fr;
+    }
+
+    &__sidebar {
+      position: fixed;
+      right: 0;
+      top: 64px;
+      bottom: 0;
+      width: 360px;
+      z-index: 50;
+      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+    }
+  }
+}
