@@ -112,10 +112,12 @@
   &__ctrl-btn {
     background: $bg-glass;
     border: 1px solid $border-color;
-    width: 48px;
+    min-width: 72px;
     height: 48px;
     border-radius: $radius-full;
-    font-size: 1.3rem;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    padding: 0 $spacing-md;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -126,6 +128,16 @@
       background: $bg-glass-hover;
       transform: scale(1.05);
     }
+  }
+
+  &__notice {
+    font-size: $font-size-xs;
+    color: $warning;
+    background: rgba($warning, 0.12);
+    border: 1px solid rgba($warning, 0.3);
+    border-radius: $radius-md;
+    padding: $spacing-sm;
+    text-align: center;
   }
 
   &__tip {

@@ -35,7 +35,6 @@ export default function LudoGame({ roomId }) {
   const [gameStarted, setGameStarted] = useState(false);
   const [winner, setWinner] = useState(null);
   const [phase, setPhase] = useState('idle');
-  const [requestFrom, setRequestFrom] = useState(null);
   const [status, setStatus] = useState('');
   const initiatorRef = useRef(null);
   const channelRef = useRef(null);
@@ -57,9 +56,8 @@ export default function LudoGame({ roomId }) {
 
         if (payload.action === 'request') {
           initiatorRef.current = payload.from;
-          setRequestFrom(payload.senderName || 'Your match');
           setPhase('requested');
-          setStatus('');
+          setStatus(`${payload.senderName || 'Your match'} invited you to Ludo.`);
           return;
         }
 
@@ -71,7 +69,6 @@ export default function LudoGame({ roomId }) {
 
         if (payload.action === 'decline') {
           initiatorRef.current = null;
-          setRequestFrom(null);
           setPhase('idle');
           setGameStarted(false);
           setStatus('Game request declined');
@@ -80,7 +77,6 @@ export default function LudoGame({ roomId }) {
 
         if (payload.action === 'cancel') {
           initiatorRef.current = null;
-          setRequestFrom(null);
           setPhase('idle');
           setGameStarted(false);
           setStatus('Game request cancelled');
@@ -97,7 +93,6 @@ export default function LudoGame({ roomId }) {
         setMyColor(payload.initiator === user?.id ? 'p1' : 'p2');
         setGameStarted(true);
         setPhase('playing');
-        setRequestFrom(null);
         setStatus('');
         setTurn('p1');
         setDice(null);
@@ -109,6 +104,22 @@ export default function LudoGame({ roomId }) {
     return () => supabase.removeChannel(channel);
   }, [roomId, user?.id]);
 
+  useEffect(() => {
+    function handleInviteResponse(event) {
+      const detail = event.detail;
+      if (!detail || detail.game !== 'ludo' || phase !== 'requested') return;
+
+      if (detail.response === 'accept') {
+        handleAcceptGame();
+      } else if (detail.response === 'decline') {
+        handleDeclineGame();
+      }
+    }
+
+    window.addEventListener('vibetogether-game-invite-response', handleInviteResponse);
+    return () => window.removeEventListener('vibetogether-game-invite-response', handleInviteResponse);
+  }, [phase]);
+
   function resetLocalState() {
     initiatorRef.current = null;
     setTokens(createInitialTokens());
@@ -119,7 +130,6 @@ export default function LudoGame({ roomId }) {
     setGameStarted(false);
     setWinner(null);
     setPhase('idle');
-    setRequestFrom(null);
     setStatus('');
   }
 
@@ -151,7 +161,6 @@ export default function LudoGame({ roomId }) {
     setMyColor('p2');
     setGameStarted(true);
     setPhase('playing');
-    setRequestFrom(null);
     setStatus('Game started');
     setTurn('p1');
     setDice(null);
@@ -167,7 +176,6 @@ export default function LudoGame({ roomId }) {
   function handleDeclineGame() {
     initiatorRef.current = null;
     setPhase('idle');
-    setRequestFrom(null);
     setStatus('');
     sendRequest('decline');
   }
@@ -324,9 +332,7 @@ export default function LudoGame({ roomId }) {
 
       {!gameStarted && phase === 'requested' && (
         <div className="ludo__start">
-          <p><strong>{requestFrom || 'Your match'}</strong> wants to play Ludo.</p>
-          <Button onClick={handleAcceptGame}>Accept</Button>
-          <Button variant="danger" onClick={handleDeclineGame}>Decline</Button>
+          <p>Challenge received. Use the popup to accept or decline.</p>
         </div>
       )}
 

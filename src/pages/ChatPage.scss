@@ -114,6 +114,104 @@
     overflow-y: auto;
     @include scrollbar;
   }
+
+  &__panel {
+    display: block;
+
+    &--hidden {
+      display: none;
+    }
+  }
+
+  &__games {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+    padding: $spacing-md;
+  }
+
+  &__games-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $spacing-sm;
+  }
+
+  &__game-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-xs;
+    padding: $spacing-md;
+    background: $bg-glass;
+    border: 1px solid $border-color;
+    border-radius: $radius-lg;
+    color: $text-primary;
+    text-align: left;
+    cursor: pointer;
+    transition: all $transition-fast;
+    font-family: $font-family;
+
+    &:hover {
+      background: $bg-glass-hover;
+      border-color: $border-light;
+      transform: translateY(-1px);
+    }
+
+    &--active {
+      border-color: $accent-primary;
+      box-shadow: $accent-glow;
+      background: rgba($accent-primary, 0.12);
+    }
+  }
+
+  &__game-name {
+    font-size: $font-size-sm;
+    font-weight: 600;
+  }
+
+  &__game-desc {
+    font-size: $font-size-xs;
+    color: $text-secondary;
+  }
+
+  &__game-panel {
+    min-height: 0;
+  }
+
+  &__invite-popup {
+    position: fixed;
+    left: $spacing-lg;
+    bottom: $spacing-lg;
+    width: min(320px, calc(100vw - 2rem));
+    background: rgba($bg-secondary, 0.95);
+    border: 1px solid $border-light;
+    border-radius: $radius-xl;
+    box-shadow: $shadow-xl;
+    backdrop-filter: blur(16px);
+    padding: $spacing-md;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+    z-index: 80;
+    animation: slideUp 0.25s ease;
+  }
+
+  &__invite-title {
+    font-size: $font-size-sm;
+    font-weight: 700;
+  }
+
+  &__invite-text {
+    font-size: $font-size-sm;
+    color: $text-secondary;
+    line-height: 1.5;
+  }
+
+  &__invite-actions {
+    display: flex;
+    gap: $spacing-sm;
+    justify-content: flex-end;
+  }
 }
 
 @media (max-width: $bp-lg) {

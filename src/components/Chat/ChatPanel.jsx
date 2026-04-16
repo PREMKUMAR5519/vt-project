@@ -1,23 +1,54 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useMatch } from '../../context/MatchContext';
+import { createChannel, broadcast, removeChannel } from '../../services/realtimeService';
 import { formatTime, EMOJI_LIST } from '../../utils/helpers';
 import './ChatPanel.scss';
 
+const TYPING_IDLE_MS = 1200;
+
 export default function ChatPanel() {
   const { user } = useAuth();
-  const { messages, send, sendDemo, currentMatch } = useMatch();
+  const { messages, send, sendDemo, currentMatch, partnerLeft } = useMatch();
   const [input, setInput] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const typingChannelRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const sentTypingRef = useRef(false);
 
   const isDemo = currentMatch?.id === 'demo-match-1';
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (isDemo || !currentMatch?.id || !user?.id) return;
+
+    const channel = createChannel(`chat-activity-${currentMatch.id}`);
+    channel
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload.userId === user.id) return;
+        setIsTyping(Boolean(payload.isTyping));
+      })
+      .subscribe();
+
+    typingChannelRef.current = channel;
+
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      sentTypingRef.current = false;
+      setIsTyping(false);
+      removeChannel(channel);
+      typingChannelRef.current = null;
+    };
+  }, [currentMatch?.id, isDemo, user?.id]);
 
   // Simulate typing indicator for demo
   useEffect(() => {
@@ -31,6 +62,26 @@ export default function ChatPanel() {
     }
   }, [messages, isDemo, user]);
 
+  function sendTypingState(nextIsTyping) {
+    if (!typingChannelRef.current || !user?.id || isDemo) return;
+    broadcast(typingChannelRef.current, 'typing', {
+      userId: user.id,
+      isTyping: nextIsTyping,
+    });
+    sentTypingRef.current = nextIsTyping;
+  }
+
+  function scheduleTypingStop() {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    typingTimeoutRef.current = setTimeout(() => {
+      if (sentTypingRef.current) {
+        sendTypingState(false);
+      }
+    }, TYPING_IDLE_MS);
+  }
+
   function handleSend(e) {
     e.preventDefault();
     const text = input.trim();
@@ -40,6 +91,13 @@ export default function ChatPanel() {
       sendDemo(text);
     } else {
       send(text);
+    }
+    if (sentTypingRef.current) {
+      sendTypingState(false);
+    }
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
     }
     setInput('');
     setShowEmoji(false);
@@ -68,13 +126,19 @@ export default function ChatPanel() {
           );
         })}
 
-        {isTyping && (
+        {isTyping && !partnerLeft && (
           <div className="chat-panel__msg chat-panel__msg--theirs">
             <div className="chat-panel__msg-bubble chat-panel__typing">
               <span className="chat-panel__typing-dot" />
               <span className="chat-panel__typing-dot" />
               <span className="chat-panel__typing-dot" />
             </div>
+          </div>
+        )}
+
+        {partnerLeft && (
+          <div className="chat-panel__partner-left">
+            Oh no, partner left the chat
           </div>
         )}
 
@@ -98,6 +162,7 @@ export default function ChatPanel() {
           type="button"
           className="chat-panel__emoji-toggle"
           onClick={() => setShowEmoji(!showEmoji)}
+          disabled={partnerLeft}
         >
           😊
         </button>
@@ -105,11 +170,33 @@ export default function ChatPanel() {
           ref={inputRef}
           type="text"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          disabled={partnerLeft}
+          onChange={(e) => {
+            const nextValue = e.target.value;
+            setInput(nextValue);
+
+            if (isDemo) return;
+
+            if (nextValue.trim()) {
+              if (!sentTypingRef.current) {
+                sendTypingState(true);
+              }
+              scheduleTypingStop();
+              return;
+            }
+
+            if (typingTimeoutRef.current) {
+              clearTimeout(typingTimeoutRef.current);
+              typingTimeoutRef.current = null;
+            }
+            if (sentTypingRef.current) {
+              sendTypingState(false);
+            }
+          }}
           placeholder="Type a message..."
           className="chat-panel__input"
         />
-        <button type="submit" className="chat-panel__send-btn" disabled={!input.trim()}>
+        <button type="submit" className="chat-panel__send-btn" disabled={partnerLeft || !input.trim()}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
           </svg>

@@ -85,6 +85,19 @@
     30% { transform: translateY(-6px); }
   }
 
+  // Partner left notice
+  &__partner-left {
+    text-align: center;
+    padding: $spacing-sm $spacing-md;
+    margin: $spacing-sm 0;
+    color: $text-muted;
+    font-size: $font-size-sm;
+    font-style: italic;
+    background: $bg-tertiary;
+    border-radius: $radius-lg;
+    animation: fadeIn 0.3s ease;
+  }
+
   // Emoji picker
   &__emoji-picker {
     display: flex;

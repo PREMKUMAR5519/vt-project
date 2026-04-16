@@ -24,7 +24,6 @@ export default function ChessGame({ roomId }) {
   const [playerColor, setPlayerColor] = useState('w');
   const [phase, setPhase] = useState('idle'); // idle | requested | waiting | playing
   const [status, setStatus] = useState('');
-  const [requestFrom, setRequestFrom] = useState(null);
   const channelRef = useRef(null);
 
   useEffect(() => {
@@ -37,9 +36,8 @@ export default function ChessGame({ roomId }) {
 
         switch (payload.action) {
           case 'request':
-            // Other player wants to play
-            setRequestFrom(payload.senderName);
             setPhase('requested');
+            setStatus(`${payload.senderName || 'Your match'} invited you to Chess.`);
             break;
 
           case 'accept':
@@ -80,6 +78,22 @@ export default function ChessGame({ roomId }) {
     channelRef.current = channel;
     return () => supabase.removeChannel(channel);
   }, [roomId, user?.id]);
+
+  useEffect(() => {
+    function handleInviteResponse(event) {
+      const detail = event.detail;
+      if (!detail || detail.game !== 'chess' || phase !== 'requested') return;
+
+      if (detail.response === 'accept') {
+        handleAccept();
+      } else if (detail.response === 'decline') {
+        handleDecline();
+      }
+    }
+
+    window.addEventListener('vibetogether-game-invite-response', handleInviteResponse);
+    return () => window.removeEventListener('vibetogether-game-invite-response', handleInviteResponse);
+  }, [phase]);
 
   // Update status text
   useEffect(() => {
@@ -122,7 +136,7 @@ export default function ChessGame({ roomId }) {
 
   function handleDecline() {
     setPhase('idle');
-    setRequestFrom(null);
+    setStatus('');
     send('decline');
   }
 
@@ -223,14 +237,9 @@ export default function ChessGame({ roomId }) {
         </div>
       )}
 
-      {/* Received a challenge */}
       {phase === 'requested' && (
-        <div className="chess__start chess__request">
-          <p><strong>{requestFrom || 'Your match'}</strong> wants to play chess!</p>
-          <div className="chess__request-actions">
-            <Button variant="success" onClick={handleAccept}>Accept</Button>
-            <Button variant="danger" onClick={handleDecline}>Decline</Button>
-          </div>
+        <div className="chess__start">
+          <p>Challenge received. Use the popup to accept or decline.</p>
         </div>
       )}
 

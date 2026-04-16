@@ -23,90 +23,12 @@
     margin-bottom: $spacing-2xl;
   }
 
-  &__modes {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: $spacing-md;
-    margin-bottom: $spacing-xl;
-  }
-
-  &__mode {
-    @include glass-card;
-    padding: $spacing-xl;
-    cursor: pointer;
-    text-align: center;
-    border: 2px solid transparent;
-    transition: all $transition-base;
-    background: $bg-glass;
-
-    &:hover {
-      background: $bg-glass-hover;
-      transform: translateY(-2px);
-    }
-
-    &--active {
-      border-color: $accent-primary;
-      background: rgba($accent-primary, 0.1);
-      box-shadow: $accent-glow;
-    }
-
-    &-icon {
-      font-size: 2.5rem;
-      display: block;
-      margin-bottom: $spacing-sm;
-    }
-
-    &-title {
-      display: block;
-      font-size: $font-size-lg;
-      font-weight: 600;
-      color: $text-primary;
-      margin-bottom: $spacing-xs;
-    }
-
-    &-desc {
-      font-size: $font-size-sm;
-      color: $text-secondary;
-    }
-  }
-
-  &__interests {
-    margin-bottom: $spacing-xl;
-
-    h3 {
-      font-size: $font-size-base;
-      color: $text-secondary;
-      margin-bottom: $spacing-md;
-    }
-
-    &-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: $spacing-sm;
-      justify-content: center;
-    }
-  }
-
-  &__interest-tag {
-    @include button-ghost;
-    padding: $spacing-xs $spacing-md;
-    border-radius: $radius-full;
-    font-size: $font-size-sm;
-
-    &--active {
-      background: rgba($accent-primary, 0.2);
-      border-color: $accent-primary;
-      color: $accent-secondary;
-    }
-  }
-
   &__actions {
     display: flex;
     gap: $spacing-md;
     justify-content: center;
   }
 
-  // Searching animation
   &__searching {
     text-align: center;
     animation: slideUp 0.5s ease;

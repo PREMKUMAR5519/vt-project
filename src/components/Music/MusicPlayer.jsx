@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import Button from '../Common/Button';
 import './MusicPlayer.scss';
 
+const REMOTE_PLAY_RETRY_MS = 800;
+
 export default function MusicPlayer({ roomId }) {
   const { user } = useAuth();
   const [videoId, setVideoId] = useState('');
@@ -13,15 +15,68 @@ export default function MusicPlayer({ roomId }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playerReady, setPlayerReady] = useState(false);
+  const [needsInteraction, setNeedsInteraction] = useState(false);
   const playerRef = useRef(null);
   const containerRef = useRef(null);
   const channelRef = useRef(null);
   const ignoreStateChange = useRef(false);
   const syncStateRef = useRef({ videoId: '', isPlaying: false, currentTime: 0 });
+  const desiredPlayingRef = useRef(false);
+  const desiredTimeRef = useRef(0);
+  const playbackRetryRef = useRef(null);
 
   useEffect(() => {
     syncStateRef.current = { videoId, isPlaying, currentTime };
   }, [videoId, isPlaying, currentTime]);
+
+  useEffect(() => {
+    return () => {
+      if (playbackRetryRef.current) {
+        clearTimeout(playbackRetryRef.current);
+      }
+    };
+  }, []);
+
+  function clearPlaybackRetry() {
+    if (playbackRetryRef.current) {
+      clearTimeout(playbackRetryRef.current);
+      playbackRetryRef.current = null;
+    }
+  }
+
+  function queueRemotePlayback() {
+    clearPlaybackRetry();
+    playbackRetryRef.current = setTimeout(() => {
+      playbackRetryRef.current = null;
+      if (desiredPlayingRef.current) {
+        applyDesiredPlayback(true);
+      }
+    }, REMOTE_PLAY_RETRY_MS);
+  }
+
+  function applyDesiredPlayback(isRemote = false) {
+    const player = playerRef.current;
+    if (!player) return;
+
+    ignoreStateChange.current = true;
+
+    if (typeof desiredTimeRef.current === 'number') {
+      player.seekTo?.(desiredTimeRef.current, true);
+      setCurrentTime(desiredTimeRef.current);
+    }
+
+    if (desiredPlayingRef.current) {
+      if (isRemote) {
+        player.mute?.();
+      }
+      player.playVideo?.();
+      queueRemotePlayback();
+    } else {
+      player.pauseVideo?.();
+      clearPlaybackRetry();
+      setNeedsInteraction(false);
+    }
+  }
 
   useEffect(() => {
     if (!roomId) return;
@@ -32,6 +87,10 @@ export default function MusicPlayer({ roomId }) {
         if (payload.sender === user?.id) return;
 
         if (payload.action === 'load') {
+          desiredPlayingRef.current = false;
+          desiredTimeRef.current = payload.time || 0;
+          clearPlaybackRetry();
+          setNeedsInteraction(false);
           setVideoId(payload.videoId);
           setIsHost(false);
           setCurrentTime(payload.time || 0);
@@ -40,28 +99,27 @@ export default function MusicPlayer({ roomId }) {
         }
 
         if (payload.action === 'play') {
-          ignoreStateChange.current = true;
+          desiredPlayingRef.current = true;
           if (typeof payload.time === 'number') {
-            playerRef.current?.seekTo?.(payload.time, true);
-            setCurrentTime(payload.time);
+            desiredTimeRef.current = payload.time;
           }
-          playerRef.current?.playVideo?.();
           setIsPlaying(true);
+          applyDesiredPlayback(true);
           return;
         }
 
         if (payload.action === 'pause') {
-          ignoreStateChange.current = true;
+          desiredPlayingRef.current = false;
           if (typeof payload.time === 'number') {
-            playerRef.current?.seekTo?.(payload.time, true);
-            setCurrentTime(payload.time);
+            desiredTimeRef.current = payload.time;
           }
-          playerRef.current?.pauseVideo?.();
           setIsPlaying(false);
+          applyDesiredPlayback(true);
           return;
         }
 
         if (payload.action === 'seek') {
+          desiredTimeRef.current = payload.time;
           ignoreStateChange.current = true;
           playerRef.current?.seekTo?.(payload.time, true);
           setCurrentTime(payload.time);
@@ -89,11 +147,13 @@ export default function MusicPlayer({ roomId }) {
           if (payload.target && payload.target !== user?.id) return;
           if (!payload.videoId) return;
 
-          ignoreStateChange.current = true;
+          desiredPlayingRef.current = Boolean(payload.isPlaying);
+          desiredTimeRef.current = payload.time || 0;
           setVideoId(payload.videoId);
           setIsHost(false);
           setCurrentTime(payload.time || 0);
           setIsPlaying(Boolean(payload.isPlaying));
+          setNeedsInteraction(false);
         }
       })
       .subscribe((status) => {
@@ -108,6 +168,7 @@ export default function MusicPlayer({ roomId }) {
 
     channelRef.current = channel;
     return () => {
+      clearPlaybackRetry();
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
@@ -129,34 +190,50 @@ export default function MusicPlayer({ roomId }) {
         videoId,
         playerVars: {
           autoplay: 0,
-          controls: 1,
+          controls: 0,
           modestbranding: 1,
           rel: 0,
+          fs: 0,
+          disablekb: 1,
+          iv_load_policy: 3,
           playsinline: 1,
         },
         events: {
           onReady: () => {
-            const seekTime = syncStateRef.current.videoId === videoId ? syncStateRef.current.currentTime : 0;
             setPlayerReady(true);
             setDuration(playerRef.current?.getDuration?.() || 0);
-            if (seekTime > 0) {
-              playerRef.current?.seekTo?.(seekTime, true);
-              setCurrentTime(seekTime);
-            }
-            if (syncStateRef.current.videoId === videoId && syncStateRef.current.isPlaying) {
-              ignoreStateChange.current = true;
-              playerRef.current?.playVideo?.();
-            }
+            applyDesiredPlayback(!isHost);
           },
           onStateChange: (e) => {
             if (ignoreStateChange.current) {
               ignoreStateChange.current = false;
               return;
             }
-            const playing = e.data === window.YT.PlayerState.PLAYING;
-            setIsPlaying(playing);
+
+            const state = e.data;
+            const ytState = window.YT.PlayerState;
+            const playing = state === ytState.PLAYING;
+            const paused = state === ytState.PAUSED;
+
             if (playing) {
+              clearPlaybackRetry();
+              setNeedsInteraction(false);
+              setIsPlaying(true);
               setDuration(playerRef.current?.getDuration?.() || 0);
+              if (!isHost) {
+                playerRef.current?.unMute?.();
+              }
+              return;
+            }
+
+            if (paused) {
+              setIsPlaying(false);
+              return;
+            }
+
+            if (desiredPlayingRef.current && !isHost) {
+              setNeedsInteraction(true);
+              queueRemotePlayback();
             }
           },
         },
@@ -174,7 +251,7 @@ export default function MusicPlayer({ roomId }) {
       }
       window.onYouTubeIframeAPIReady = () => createPlayer();
     }
-  }, [videoId]);
+  }, [videoId, isHost]);
 
   useEffect(() => {
     if (!isPlaying || !playerRef.current) return;
@@ -201,6 +278,10 @@ export default function MusicPlayer({ roomId }) {
     const id = extractVideoId(urlInput);
     if (!id) return;
 
+    desiredPlayingRef.current = false;
+    desiredTimeRef.current = 0;
+    clearPlaybackRetry();
+    setNeedsInteraction(false);
     setVideoId(id);
     setIsHost(true);
     setCurrentTime(0);
@@ -210,19 +291,27 @@ export default function MusicPlayer({ roomId }) {
   }
 
   function handlePlay() {
+    desiredPlayingRef.current = true;
+    desiredTimeRef.current = playerRef.current?.getCurrentTime?.() || currentTime;
+    setNeedsInteraction(false);
+    playerRef.current?.unMute?.();
     playerRef.current?.playVideo?.();
     setIsPlaying(true);
-    sendMusic('play', { time: playerRef.current?.getCurrentTime?.() || currentTime });
+    sendMusic('play', { time: desiredTimeRef.current });
   }
 
   function handlePause() {
+    desiredPlayingRef.current = false;
+    desiredTimeRef.current = playerRef.current?.getCurrentTime?.() || currentTime;
     playerRef.current?.pauseVideo?.();
     setIsPlaying(false);
-    sendMusic('pause', { time: playerRef.current?.getCurrentTime?.() || currentTime });
+    setNeedsInteraction(false);
+    sendMusic('pause', { time: desiredTimeRef.current });
   }
 
   function handleSeek(e) {
     const time = parseFloat(e.target.value);
+    desiredTimeRef.current = time;
     playerRef.current?.seekTo?.(time, true);
     setCurrentTime(time);
     sendMusic('seek', { time });
@@ -246,7 +335,7 @@ export default function MusicPlayer({ roomId }) {
   return (
     <div className="music-player">
       <div className="music-player__header">
-        <h3>🎵 Music Sync</h3>
+        <h3>Music Sync</h3>
         {isHost && <span className="music-player__host-badge">Host</span>}
       </div>
 
@@ -266,7 +355,7 @@ export default function MusicPlayer({ roomId }) {
           <div ref={containerRef} />
         ) : (
           <div className="music-player__placeholder">
-            <span>🎧</span>
+            <span>Video</span>
             <p>Paste a YouTube link to start listening together</p>
           </div>
         )}
@@ -292,14 +381,20 @@ export default function MusicPlayer({ roomId }) {
               className="music-player__ctrl-btn"
               onClick={isPlaying ? handlePause : handlePlay}
             >
-              {isPlaying ? '⏸' : '▶️'}
+              {isPlaying ? 'Pause' : 'Play'}
             </button>
           </div>
         </div>
       )}
 
+      {needsInteraction && (
+        <div className="music-player__notice">
+          Your browser blocked autoplay. Press Play once to continue synced playback.
+        </div>
+      )}
+
       <div className="music-player__tip">
-        <p>Paste a YouTube link and click Load. Both users will hear the same music in sync.</p>
+        <p>Paste a YouTube link and click Load. Both users will stay in sync.</p>
       </div>
     </div>
   );

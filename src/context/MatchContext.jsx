@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext';
 import {
   joinQueue, leaveQueue, checkMyQueueStatus, findWaitingUser,
   claimMatch, getUser, getMatch,
-  getMessages, sendMessage, subscribeToMessages,
+  getMessages, sendMessage,
   isBlocked, supabase,
 } from '../services/supabase';
 
@@ -34,6 +34,7 @@ export function MatchProvider({ children }) {
   const [currentMatch, setCurrentMatch] = useState(null);
   const [partner, setPartner] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [partnerLeft, setPartnerLeft] = useState(false);
   const [restoringRoom, setRestoringRoom] = useState(true);
   const channelRef = useRef(null);
   const pollRef = useRef(null);
@@ -91,13 +92,44 @@ export function MatchProvider({ children }) {
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
     }
-    const sub = subscribeToMessages(matchId, (newMsg) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === newMsg.id)) return prev;
-        return [...prev, newMsg];
-      });
-    });
-    channelRef.current = sub;
+    // Single channel with both postgres_changes (backup) and broadcast (instant)
+    const channel = supabase
+      .channel(`messages:${matchId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
+        (payload) => {
+          const newMsg = payload.new;
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            // Replace any optimistic version of this message
+            const hasOptimistic = prev.some(
+              (m) => typeof m.id === 'string' && m.id.startsWith('optimistic-') && m.sender_id === newMsg.sender_id && m.content === newMsg.content
+            );
+            if (hasOptimistic) {
+              return prev.map((m) =>
+                typeof m.id === 'string' && m.id.startsWith('optimistic-') && m.sender_id === newMsg.sender_id && m.content === newMsg.content
+                  ? newMsg
+                  : m
+              );
+            }
+            return [...prev, newMsg];
+          });
+        }
+      )
+      .on('broadcast', { event: 'new_message' }, ({ payload }) => {
+        // Instant delivery via broadcast - add if not already present
+        if (!payload) return;
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === payload.id)) return prev;
+          return [...prev, payload];
+        });
+      })
+      .on('broadcast', { event: 'partner_left' }, () => {
+        setPartnerLeft(true);
+      })
+      .subscribe();
+    channelRef.current = channel;
   }
 
   const startSearch = useCallback(async (interests = []) => {
@@ -183,18 +215,54 @@ export function MatchProvider({ children }) {
 
   const send = useCallback(async (content) => {
     if (!currentMatch || !user) return;
-    await sendMessage(currentMatch.id, user.id, content);
+
+    // Optimistically add the message to local state so sender sees it instantly
+    const optimisticMsg = {
+      id: `optimistic-${Date.now()}`,
+      match_id: currentMatch.id,
+      sender_id: user.id,
+      content,
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+
+    const { data, error } = await sendMessage(currentMatch.id, user.id, content);
+    if (data) {
+      // Replace optimistic message with the real one from DB
+      setMessages((prev) =>
+        prev.map((m) => (m.id === optimisticMsg.id ? data : m))
+      );
+      // Broadcast to the other user for instant delivery
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'new_message',
+          payload: data,
+        });
+      }
+    } else if (error) {
+      // Remove optimistic message on failure
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
+      console.error('Failed to send message:', error);
+    }
   }, [currentMatch, user]);
 
   const endMatch = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
     isPollingRef.current = false;
+    // Notify the partner before leaving
     if (channelRef.current) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'partner_left',
+        payload: {},
+      });
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
     clearRoom();
     setRestoringRoom(false);
+    setPartnerLeft(false);
     setMatchState('idle');
     setCurrentMatch(null);
     setPartner(null);
@@ -239,7 +307,7 @@ export function MatchProvider({ children }) {
 
   return (
     <MatchContext.Provider value={{
-      matchState, currentMatch, partner, messages, restoringRoom,
+      matchState, currentMatch, partner, messages, partnerLeft, restoringRoom,
       startSearch, cancelSearch, send, endMatch,
       startDemoMatch, sendDemo,
     }}
